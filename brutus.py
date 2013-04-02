@@ -5,10 +5,10 @@
 # modification, are permitted provided that the following conditions are met: 
 #
 # 1. Redistributions of source code must retain the above copyright notice, this
-#    list of conditions and the following disclaimer. 
+#		list of conditions and the following disclaimer. 
 # 2. Redistributions in binary form must reproduce the above copyright notice,
-#    this list of conditions and the following disclaimer in the documentation
-#    and/or other materials provided with the distribution. 
+#		this list of conditions and the following disclaimer in the documentation
+#		and/or other materials provided with the distribution. 
 # 
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -36,82 +36,82 @@ host_port = 1013
 
 bytesDiff = dict()
 for i in range(256):
-  high = 0;
-  for j in range(8):
-    high += (i >> j) & 1
-  bytesDiff[i] = high
+	high = 0;
+	for j in range(8):
+		high += (i >> j) & 1
+	bytesDiff[i] = high
 
 def hamming_distance(lh, rh):
-  '''
-  Return the binary hamming distance between two hex strings.
-  '''
-  if(len(lh) % 2 != 0):
-    a = [0]
-    a.extend(lh)
-    lh = a
-  if (len(rh) % 2 != 0):
-    a = [0]
-    a.extend(rh)
-    rh = a
+	'''
+	Return the binary hamming distance between two hex strings.
+	'''
+	if(len(lh) % 2 != 0):
+		a = [0]
+		a.extend(lh)
+		lh = a
+	if (len(rh) % 2 != 0):
+		a = [0]
+		a.extend(rh)
+		rh = a
 
-  lhb = binascii.unhexlify(lh)
-  rhb = binascii.unhexlify(rh)
-  
-  if len(lhb)<len(rhb):
-    a = [0] * (len(rhb)-len(lhb))
-    a.extend(lhb)
-    lhb = a
-  if len(rhb)<len(lhb):
-    a = [0]*(len(lhb)-len(rhb))
-    a.extend(rhb)
-    rhb = a
-  return sum((bytesDiff[x ^ y]) for (x, y) in zip(lhb, rhb))
+	lhb = binascii.unhexlify(lh)
+	rhb = binascii.unhexlify(rh)
+	
+	if len(lhb)<len(rhb):
+		a = [0] * (len(rhb)-len(lhb))
+		a.extend(lhb)
+		lhb = a
+	if len(rhb)<len(lhb):
+		a = [0]*(len(lhb)-len(rhb))
+		a.extend(rhb)
+		rhb = a
+	return sum((bytesDiff[x ^ y]) for (x, y) in zip(lhb, rhb))
 
 def nth_plaintext(radix, n):
-  syms = []
-  for i in range(radix):
-    syms.append(symbols[int(n % len(symbols))])
-    n = n // len(symbols)
-  return ''.join(syms)
+	syms = []
+	for i in range(radix):
+		syms.append(symbols[int(n % len(symbols))])
+		n = n // len(symbols)
+	return ''.join(syms)
 
 def plaintext_range(radix, min_p, max_p):
-  for p in range(min_p, max_p):
-    yield nth_plaintext(radix, p)
+	for p in range(min_p, max_p):
+		yield nth_plaintext(radix, p)
 
 def plaintext_score(pt):
-  hash_ = skein.skein1024(pt.encode(), digest_bits=1024).hexdigest()
-  return hamming_distance(hash_, target)
+	hash_ = skein.skein1024(pt.encode(), digest_bits=1024).hexdigest()
+	return hamming_distance(hash_, target)
 
 def closest_in_set(plaintexts):
-  min_score = 1000000
-  winner = 'butt'
-  for pt in plaintexts:
-    score = plaintext_score(pt)
-    if score < min_score:
-      min_score = score
-      winner = pt
-  return (winner, min_score)
+	min_score = 1000000
+	winner = 'butt'
+	for pt in plaintexts:
+		score = plaintext_score(pt)
+		if score < min_score:
+			min_score = score
+			winner = pt
+	return (winner, min_score)
 
 
 def main():
-  print('-- BRUTUS --')
-  while True:
-    try:
-      server = socket.create_connection((host_addr, host_port), 5)
-    except socket.error as e:
-      print('socket.error:', e)
-      time.sleep(5)
-      continue
-    assignment = server.recv(4096)
-    while not '\n' in assignment.decode():
-      assignment = assignment + server.recv(4096)
-    (radix, minp, maxp) = assignment.decode().rstrip('\n').split(',')
-    (text, score) = closest_in_set(plaintext_range(int(radix), int(minp), int(maxp)))
-    print (text, score)
-    server.send(('%d,%s\n' % (score, text)).encode())
+	print('-- BRUTUS --')
+	while True:
+		try:
+			server = socket.create_connection((host_addr, host_port), 5)
+		except socket.error as e:
+			print('socket.error:', e)
+			time.sleep(5)
+			continue
+		assignment = server.recv(4096)
+		while not '\n' in assignment.decode():
+			assignment = assignment + server.recv(4096)
+		(radix, minp, maxp) = assignment.decode().rstrip('\n').split(',')
+		(text, score) = closest_in_set(plaintext_range(int(radix), int(minp), int(maxp)))
+		print (text, score)
+		server.send(('%d,%s\n' % (score, text)).encode())
 
 
 
 
 if __name__=='__main__':
-  sys.exit(main())
+	sys.exit(main())
